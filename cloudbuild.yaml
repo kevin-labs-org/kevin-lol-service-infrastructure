@@ -1,0 +1,38 @@
+steps:
+  # Build the image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_LOCATION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA'
+      - '.'
+
+  # Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_LOCATION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA'
+
+  # Deploy image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--region'
+      - '${_SERVICE_REGION}'
+      - '--image'
+      - '${_LOCATION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA'
+
+substitutions:
+  # Default values for the variables
+  _LOCATION: 'us-central1'
+  _PROJECT_ID: 'my-project-id'
+  _REPOSITORY: 'my-repository'
+  _IMAGE: 'my-image'
+  _SERVICE_NAME: 'my-service'
+  _SERVICE_REGION: 'us-central1'
+
+images:
+  - '${_LOCATION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/${_IMAGE}:$COMMIT_SHA'
